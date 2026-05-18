@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 
-from app.api.dependancies import ShipmentServiceDep
+from app.api.dependancies import SellerDep, ShipmentServiceDep
 from app.api.schemas.shipment import ShipmentCreate, ShipmentRead, ShipmentUpdate
 
 router = APIRouter(prefix="/shipment", tags=["Shipment"])
@@ -20,6 +20,7 @@ async def get_shipment(id: int, service: ShipmentServiceDep):
 async def submit_shipment(
     shipment: ShipmentCreate,
     service: ShipmentServiceDep,
+    _: SellerDep
 ):
     return await service.add(shipment)
 
@@ -28,6 +29,7 @@ async def update_shipment(
     id: int,
     shipment_update: ShipmentUpdate,
     service: ShipmentServiceDep,
+    _: SellerDep
 ):
     # Update data with given fields
     update = shipment_update.model_dump(exclude_none=True)
@@ -47,7 +49,7 @@ async def update_shipment(
     return updated_shipement
 
 @router.delete("/")
-async def delete_shipment(id: int, service: ShipmentServiceDep) -> dict[str, str]:
+async def delete_shipment(id: int, service: ShipmentServiceDep, _: SellerDep) -> dict[str, str]:
     shipment = await service.get(id)
     if not shipment:
         raise HTTPException(

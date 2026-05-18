@@ -3,11 +3,12 @@ from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from passlib.context import CryptContext
-import jwt
 
 from app.api.schemas.seller import SellerCreate
 from app.database.models import Seller
+from app.utils import generate_access_token
 from app.config import jwt_settings
+
 
 
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -16,6 +17,10 @@ class SellerService:
     def __init__(self, session: AsyncSession):
         self.db = session
 
+    async def get(self, id: int) -> Seller | None:
+        result = await self.db.get(Seller, id)
+        return result
+    
     async def add(self, credentials: SellerCreate) -> Seller:
         seller = Seller(**credentials.model_dump(exclude={"password"}))
         seller.password_hash = password_context.hash(credentials.password)
@@ -31,13 +36,11 @@ class SellerService:
         seller = result.scalar_one_or_none()
         if not seller or not password_context.verify(password, seller.password_hash):
             return None
-        token = jwt.encode(
-            {
+        token = generate_access_token(
+            data={
                 "sub": str(seller.id),
-                "exp": datetime.now() + timedelta(minutes=jwt_settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
+                "email": seller.email
             },
-            key=jwt_settings.JWT_SECRET,
-            algorithm=jwt_settings.JWT_ALGORITHM
+            expiry=timedelta(minutes=jwt_settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
         )
-        
         return token
