@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import jwt
 from app.config import jwt_settings
 
@@ -6,7 +6,7 @@ def generate_access_token(data: dict, expiry: timedelta = timedelta(days=1)) -> 
     token = jwt.encode(
         {
             **data,
-            "exp": datetime.now() + expiry
+            "exp": datetime.now(timezone.utc) + expiry # it won't work without timezone, because jwt will compare it with current time in utc
         },
         key=jwt_settings.JWT_SECRET,
         algorithm=jwt_settings.JWT_ALGORITHM
