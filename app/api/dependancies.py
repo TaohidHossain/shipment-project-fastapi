@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models import Seller
@@ -23,11 +23,16 @@ SellerServiceDep = Annotated[SellerService, Depends(get_seller_service)]
 async def get_current_seller(service: SellerServiceDep, token: Annotated[str, Depends(oauth2_scheme)]):
     data = decode_access_token(token)
     if not data:
-        return None
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
     seller_id = data.get("sub")
-    print(f"Decoded token data: {data}")  # Debugging line
     if not seller_id:
-        return None
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+        )
     return await service.get(int(seller_id))
 
 SellerDep = Annotated[Seller, Depends(get_current_seller)]

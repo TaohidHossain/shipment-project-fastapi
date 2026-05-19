@@ -26,6 +26,4 @@ async def seller_login(
 async def seller_dashboard(
     seller: SellerDep
 ):
-    if not seller:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     return {"message": f"Hello, {seller.email}!"}
